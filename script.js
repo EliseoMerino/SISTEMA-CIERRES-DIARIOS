@@ -44,29 +44,41 @@ document.addEventListener("input", () => {
 });
 function calcular() {
   let totalGeneral = 0;
+  let totalEDH = 0;
+  let totalMAS = 0;
 
   document.querySelectorAll("tbody tr").forEach(fila => {
-    let entEDH = Number(fila.children[2].children[0].value || 0);
-    let entMAS = Number(fila.children[3].children[0].value || 0);
-    let devEDH = Number(fila.children[4].children[0].value || 0);
-    let devMAS = Number(fila.children[5].children[0].value || 0);
+    const entEDH = Number(fila.children[2].children[0].value || 0);
+    const entMAS = Number(fila.children[3].children[0].value || 0);
+    const devEDH = Number(fila.children[4].children[0].value || 0);
+    const devMAS = Number(fila.children[5].children[0].value || 0);
 
-    let edh = (entEDH - devEDH) * PRECIO_EDH;
-    let mas = (entMAS - devMAS) * PRECIO_MAS;
-    let total = edh + mas;
+    const netEDH = entEDH - devEDH;
+    const netMAS = entMAS - devMAS;
+
+    const edh = netEDH * PRECIO_EDH;
+    const mas = netMAS * PRECIO_MAS;
+    const total = edh + mas;
 
     fila.querySelector(".edhTotal").innerText = edh.toFixed(2);
     fila.querySelector(".masTotal").innerText = mas.toFixed(2);
     fila.querySelector(".filaTotal").innerText = total.toFixed(2);
 
+    totalEDH += netEDH;
+    totalMAS += netMAS;
     totalGeneral += total;
   });
 
+  document.getElementById("totalEDHtabla").innerText = totalEDH;
+  document.getElementById("totalMAStabla").innerText = totalMAS;
   document.getElementById("totalGeneral").innerText = totalGeneral.toFixed(2);
-  return totalGeneral;
+
+  return { totalGeneral, totalEDH, totalMAS };
 }
+
+/* ================= LOCALSTORAGE ================= */
 function guardarLocal() {
-  let data = {
+  const data = {
     fecha: document.getElementById("fecha").value,
     filas: []
   };
@@ -84,7 +96,7 @@ function guardarLocal() {
 }
 
 function cargarLocal() {
-  let data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
   if (!data) return;
 
   document.getElementById("fecha").value = data.fecha;
@@ -99,9 +111,9 @@ function cargarLocal() {
   calcular();
 }
 function exportarExcel() {
-  const total = calcular();
+  const { totalGeneral, totalEDH, totalMAS } = calcular();
 
-  let wsData = [
+  const wsData = [
     ["DESIGNADO", DESIGNADO],
     ["FECHA", document.getElementById("fecha").value],
     [],
@@ -109,10 +121,13 @@ function exportarExcel() {
   ];
 
   document.querySelectorAll("tbody tr").forEach((fila, i) => {
-    let entEDH = Number(fila.children[2].children[0].value || 0);
-    let entMAS = Number(fila.children[3].children[0].value || 0);
-    let devEDH = Number(fila.children[4].children[0].value || 0);
-    let devMAS = Number(fila.children[5].children[0].value || 0);
+    const entEDH = Number(fila.children[2].children[0].value || 0);
+    const entMAS = Number(fila.children[3].children[0].value || 0);
+    const devEDH = Number(fila.children[4].children[0].value || 0);
+    const devMAS = Number(fila.children[5].children[0].value || 0);
+
+    const netEDH = entEDH - devEDH;
+    const netMAS = entMAS - devMAS;
 
     wsData.push([
       clientes[i].vendedor,
@@ -121,18 +136,19 @@ function exportarExcel() {
       entMAS,
       devEDH,
       devMAS,
-      (entEDH - devEDH) * PRECIO_EDH,
-      (entMAS - devMAS) * PRECIO_MAS,
-      ((entEDH - devEDH) * PRECIO_EDH) +
-      ((entMAS - devMAS) * PRECIO_MAS)
+      netEDH * PRECIO_EDH,
+      netMAS * PRECIO_MAS,
+      (netEDH * PRECIO_EDH) + (netMAS * PRECIO_MAS)
     ]);
   });
 
   wsData.push([]);
-  wsData.push(["","","","","","","","TOTAL", total]);
+  wsData.push(["TOTAL EDH ENTREGADO", totalEDH]);
+  wsData.push(["TOTAL MAS ENTREGADO", totalMAS]);
+  wsData.push(["TOTAL $", totalGeneral]);
 
-  let wb = XLSX.utils.book_new();
-  let ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, "CIERRE DIARIO");
 
   XLSX.writeFile(
@@ -143,11 +159,9 @@ function exportarExcel() {
 function limpiarDatos() {
   if (!confirm("¿Seguro que deseas iniciar un nuevo día?")) return;
 
-  document.querySelectorAll("tbody input").forEach(inp => {
-    inp.value = "";
-  });
-
+  document.querySelectorAll("tbody input").forEach(inp => inp.value = "");
   document.getElementById("fecha").value = "";
+
   guardarLocal();
   calcular();
 }
