@@ -40,19 +40,31 @@
     </tr>
   </thead>
 
-  <tbody></tbody>
+  <tbody>
+  </tbody>
 
   <tfoot>
     <tr>
-      <td colspan="8">TOTAL</td>
+      <td colspan="2"><strong>TOTAL EDH ENTREGADO</strong></td>
+      <td id="totalEDHtabla" colspan="7">0</td>
+    </tr>
+    <tr>
+      <td colspan="2"><strong>TOTAL MAS ENTREGADO</strong></td>
+      <td id="totalMAStabla" colspan="7">0</td>
+    </tr>
+    <tr>
+      <td colspan="8"><strong>TOTAL $</strong></td>
       <td id="totalGeneral">0.00</td>
     </tr>
   </tfoot>
 </table>
 
-<button onclick="exportarExcel()">DESCARGAR EXCEL</button>
-<button class="btn-limpiar" onclick="limpiarDatos()">LIMPIAR DATOS</button>
+<div class="acciones">
+  <button onclick="exportarExcel()">DESCARGAR EXCEL</button>
+  <button class="btn-limpiar" onclick="limpiarDatos()">LIMPIAR DATOS</button>
+</div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
