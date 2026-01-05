@@ -1,6 +1,5 @@
 const PRECIO_EDH = 0.48;
 const PRECIO_MAS = 0.23;
-
 const DESIGNADO = "Stephanie Alejandra Estrada Echeverría";
 const STORAGE_KEY = "cierre_diario_dh";
 
@@ -24,13 +23,11 @@ const clientes = [
 ];
 
 const tbody = document.querySelector("tbody");
-
-/* ================= CREAR FILAS ================= */
-clientes.forEach(() => {
+clientes.forEach(c => {
   tbody.innerHTML += `
     <tr>
-      <td></td>
-      <td></td>
+      <td>${c.vendedor}</td>
+      <td>${c.ref}</td>
       <td><input type="number" min="0"></td>
       <td><input type="number" min="0"></td>
       <td><input type="number" min="0"></td>
@@ -41,47 +38,35 @@ clientes.forEach(() => {
     </tr>
   `;
 });
-
-/* ================= CÁLCULOS ================= */
+document.addEventListener("input", () => {
+  calcular();
+  guardarLocal();
+});
 function calcular() {
   let totalGeneral = 0;
 
-  document.querySelectorAll("tbody tr").forEach((fila, i) => {
-    fila.children[0].innerText = clientes[i].vendedor;
-    fila.children[1].innerText = clientes[i].ref;
-
+  document.querySelectorAll("tbody tr").forEach(fila => {
     let entEDH = Number(fila.children[2].children[0].value || 0);
     let entMAS = Number(fila.children[3].children[0].value || 0);
     let devEDH = Number(fila.children[4].children[0].value || 0);
     let devMAS = Number(fila.children[5].children[0].value || 0);
 
-    let factEDH = entEDH - devEDH;
-    let factMAS = entMAS - devMAS;
+    let edh = (entEDH - devEDH) * PRECIO_EDH;
+    let mas = (entMAS - devMAS) * PRECIO_MAS;
+    let total = edh + mas;
 
-    let edhTotal = factEDH * PRECIO_EDH;
-    let masTotal = factMAS * PRECIO_MAS;
-    let filaTotal = edhTotal + masTotal;
+    fila.querySelector(".edhTotal").innerText = edh.toFixed(2);
+    fila.querySelector(".masTotal").innerText = mas.toFixed(2);
+    fila.querySelector(".filaTotal").innerText = total.toFixed(2);
 
-    fila.querySelector(".edhTotal").innerText = edhTotal.toFixed(2);
-    fila.querySelector(".masTotal").innerText = masTotal.toFixed(2);
-    fila.querySelector(".filaTotal").innerText = filaTotal.toFixed(2);
-
-    totalGeneral += filaTotal;
+    totalGeneral += total;
   });
 
   document.getElementById("totalGeneral").innerText = totalGeneral.toFixed(2);
   return totalGeneral;
 }
-
-/* ================= EVENTOS ================= */
-document.addEventListener("input", () => {
-  calcular();
-  guardarLocal();
-});
-
-/* ================= LOCALSTORAGE ================= */
 function guardarLocal() {
-  const data = {
+  let data = {
     fecha: document.getElementById("fecha").value,
     filas: []
   };
@@ -99,7 +84,7 @@ function guardarLocal() {
 }
 
 function cargarLocal() {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY));
   if (!data) return;
 
   document.getElementById("fecha").value = data.fecha;
@@ -113,10 +98,8 @@ function cargarLocal() {
 
   calcular();
 }
-
-/* ================= EXPORTAR A EXCEL ================= */
 function exportarExcel() {
-  const totalGeneral = calcular(); // asegura datos actualizados
+  const total = calcular();
 
   let wsData = [
     ["DESIGNADO", DESIGNADO],
@@ -131,9 +114,6 @@ function exportarExcel() {
     let devEDH = Number(fila.children[4].children[0].value || 0);
     let devMAS = Number(fila.children[5].children[0].value || 0);
 
-    let factEDH = entEDH - devEDH;
-    let factMAS = entMAS - devMAS;
-
     wsData.push([
       clientes[i].vendedor,
       clientes[i].ref,
@@ -141,17 +121,18 @@ function exportarExcel() {
       entMAS,
       devEDH,
       devMAS,
-      factEDH * PRECIO_EDH,
-      factMAS * PRECIO_MAS,
-      (factEDH * PRECIO_EDH) + (factMAS * PRECIO_MAS)
+      (entEDH - devEDH) * PRECIO_EDH,
+      (entMAS - devMAS) * PRECIO_MAS,
+      ((entEDH - devEDH) * PRECIO_EDH) +
+      ((entMAS - devMAS) * PRECIO_MAS)
     ]);
   });
 
   wsData.push([]);
-  wsData.push(["","","","","","","","TOTAL", totalGeneral]);
+  wsData.push(["","","","","","","","TOTAL", total]);
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  let wb = XLSX.utils.book_new();
+  let ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, "CIERRE DIARIO");
 
   XLSX.writeFile(
@@ -159,6 +140,15 @@ function exportarExcel() {
     `CIERRE_DH_${document.getElementById("fecha").value || "SIN_FECHA"}.xlsx`
   );
 }
+function limpiarDatos() {
+  if (!confirm("¿Seguro que deseas iniciar un nuevo día?")) return;
 
-/* ================= INIT ================= */
+  document.querySelectorAll("tbody input").forEach(inp => {
+    inp.value = "";
+  });
+
+  document.getElementById("fecha").value = "";
+  guardarLocal();
+  calcular();
+}
 cargarLocal();
