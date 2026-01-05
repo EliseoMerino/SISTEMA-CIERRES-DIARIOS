@@ -50,22 +50,18 @@ function calcular() {
   document.querySelectorAll("tbody tr").forEach(fila => {
     const entEDH = Number(fila.children[2].children[0].value || 0);
     const entMAS = Number(fila.children[3].children[0].value || 0);
-    const devEDH = Number(fila.children[4].children[0].value || 0);
-    const devMAS = Number(fila.children[5].children[0].value || 0);
 
-    const netEDH = entEDH - devEDH;
-    const netMAS = entMAS - devMAS;
-
-    const edh = netEDH * PRECIO_EDH;
-    const mas = netMAS * PRECIO_MAS;
+    // ❌ DEVOLUCIONES NO SE USAN
+    const edh = entEDH * PRECIO_EDH;
+    const mas = entMAS * PRECIO_MAS;
     const total = edh + mas;
 
     fila.querySelector(".edhTotal").innerText = edh.toFixed(2);
     fila.querySelector(".masTotal").innerText = mas.toFixed(2);
     fila.querySelector(".filaTotal").innerText = total.toFixed(2);
 
-    totalEDH += netEDH;
-    totalMAS += netMAS;
+    totalEDH += entEDH;
+    totalMAS += entMAS;
     totalGeneral += total;
   });
 
@@ -75,8 +71,6 @@ function calcular() {
 
   return { totalGeneral, totalEDH, totalMAS };
 }
-
-/* ================= LOCALSTORAGE ================= */
 function guardarLocal() {
   const data = {
     fecha: document.getElementById("fecha").value,
@@ -126,9 +120,6 @@ function exportarExcel() {
     const devEDH = Number(fila.children[4].children[0].value || 0);
     const devMAS = Number(fila.children[5].children[0].value || 0);
 
-    const netEDH = entEDH - devEDH;
-    const netMAS = entMAS - devMAS;
-
     wsData.push([
       clientes[i].vendedor,
       clientes[i].ref,
@@ -136,9 +127,9 @@ function exportarExcel() {
       entMAS,
       devEDH,
       devMAS,
-      netEDH * PRECIO_EDH,
-      netMAS * PRECIO_MAS,
-      (netEDH * PRECIO_EDH) + (netMAS * PRECIO_MAS)
+      entEDH * PRECIO_EDH,
+      entMAS * PRECIO_MAS,
+      (entEDH * PRECIO_EDH) + (entMAS * PRECIO_MAS)
     ]);
   });
 
