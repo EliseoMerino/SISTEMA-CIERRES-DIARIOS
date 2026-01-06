@@ -23,6 +23,7 @@ const clientes = [
 ];
 
 const tbody = document.querySelector("tbody");
+
 clientes.forEach(c => {
   tbody.innerHTML += `
     <tr>
@@ -42,6 +43,7 @@ document.addEventListener("input", () => {
   calcular();
   guardarLocal();
 });
+
 function calcular() {
   let totalGeneral = 0;
   let totalEDH = 0;
@@ -50,27 +52,33 @@ function calcular() {
   document.querySelectorAll("tbody tr").forEach(fila => {
     const entEDH = Number(fila.children[2].children[0].value || 0);
     const entMAS = Number(fila.children[3].children[0].value || 0);
-
-    // ❌ DEVOLUCIONES NO SE USAN
-    const edh = entEDH * PRECIO_EDH;
-    const mas = entMAS * PRECIO_MAS;
-    const total = edh + mas;
-
-    fila.querySelector(".edhTotal").innerText = edh.toFixed(2);
-    fila.querySelector(".masTotal").innerText = mas.toFixed(2);
-    fila.querySelector(".filaTotal").innerText = total.toFixed(2);
-
+    const devEDH = Number(fila.children[4].children[0].value || 0);
+    const devMAS = Number(fila.children[5].children[0].value || 0);
     totalEDH += entEDH;
     totalMAS += entMAS;
-    totalGeneral += total;
+
+    const dineroEDH = (entEDH - devEDH) * PRECIO_EDH;
+    const dineroMAS = (entMAS - devMAS) * PRECIO_MAS;
+    const totalFila = dineroEDH + dineroMAS;
+
+    fila.querySelector(".edhTotal").innerText = dineroEDH.toFixed(2);
+    fila.querySelector(".masTotal").innerText = dineroMAS.toFixed(2);
+    fila.querySelector(".filaTotal").innerText = totalFila.toFixed(2);
+
+    totalGeneral += totalFila;
   });
 
-  document.getElementById("totalEDHtabla").innerText = totalEDH;
-  document.getElementById("totalMAStabla").innerText = totalMAS;
   document.getElementById("totalGeneral").innerText = totalGeneral.toFixed(2);
+
+  if (document.getElementById("totalEDHtabla"))
+    document.getElementById("totalEDHtabla").innerText = totalEDH;
+
+  if (document.getElementById("totalMAStabla"))
+    document.getElementById("totalMAStabla").innerText = totalMAS;
 
   return { totalGeneral, totalEDH, totalMAS };
 }
+
 function guardarLocal() {
   const data = {
     fecha: document.getElementById("fecha").value,
@@ -104,8 +112,11 @@ function cargarLocal() {
 
   calcular();
 }
+
 function exportarExcel() {
-  const { totalGeneral, totalEDH, totalMAS } = calcular();
+  let totalGeneral = 0;
+  let totalEDH = 0;
+  let totalMAS = 0;
 
   const wsData = [
     ["DESIGNADO", DESIGNADO],
@@ -120,6 +131,15 @@ function exportarExcel() {
     const devEDH = Number(fila.children[4].children[0].value || 0);
     const devMAS = Number(fila.children[5].children[0].value || 0);
 
+    totalEDH += entEDH;
+    totalMAS += entMAS;
+
+    const dineroEDH = (entEDH - devEDH) * PRECIO_EDH;
+    const dineroMAS = (entMAS - devMAS) * PRECIO_MAS;
+    const totalFila = dineroEDH + dineroMAS;
+
+    totalGeneral += totalFila;
+
     wsData.push([
       clientes[i].vendedor,
       clientes[i].ref,
@@ -127,16 +147,16 @@ function exportarExcel() {
       entMAS,
       devEDH,
       devMAS,
-      entEDH * PRECIO_EDH,
-      entMAS * PRECIO_MAS,
-      (entEDH * PRECIO_EDH) + (entMAS * PRECIO_MAS)
+      dineroEDH,
+      dineroMAS,
+      totalFila
     ]);
   });
 
   wsData.push([]);
   wsData.push(["TOTAL EDH ENTREGADO", totalEDH]);
   wsData.push(["TOTAL MAS ENTREGADO", totalMAS]);
-  wsData.push(["TOTAL $", totalGeneral]);
+  wsData.push(["TOTAL $ (CON DEVOLUCIONES)", totalGeneral]);
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -147,6 +167,7 @@ function exportarExcel() {
     `CIERRE_DH_${document.getElementById("fecha").value || "SIN_FECHA"}.xlsx`
   );
 }
+
 function limpiarDatos() {
   if (!confirm("¿Seguro que deseas iniciar un nuevo día?")) return;
 
@@ -156,4 +177,5 @@ function limpiarDatos() {
   guardarLocal();
   calcular();
 }
+
 cargarLocal();
